@@ -3,7 +3,8 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidca
 go 1.18
 
 require (
-	github.com/coreos/go-oidc v2.2.1+incompatible
+	// github.com/coreos/go-oidc v2.2.1+incompatible
+	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/stretchr/testify v1.8.0
 	go.opentelemetry.io/collector v0.61.0
 	go.uber.org/zap v1.23.0

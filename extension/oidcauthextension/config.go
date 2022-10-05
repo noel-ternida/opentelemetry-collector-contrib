@@ -27,6 +27,11 @@ type Config struct {
 	// Required.
 	IssuerURL string `mapstructure:"issuer_url"`
 
+	// DiscoveryBaseURL allows discovery to work when the issuer_url reported by upstream is mismatched with the discovery URL. 
+	// This is meant for integration with off-spec providers such as Azure.
+	// Optional.
+	DiscoveryBaseURL string `mapstructure:"discovery_base_url"`
+
 	// Audience of the token, used during the verification.
 	// For example: "https://accounts.google.com" or "https://login.salesforce.com".
 	// Required.

@@ -28,7 +28,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc"
+	// "github.com/coreos/go-oidc/v3"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"go.opentelemetry.io/collector/client"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configauth"
@@ -90,7 +91,9 @@ func (e *oidcExtension) start(context.Context, component.Host) error {
 
 // authenticate checks whether the given context contains valid auth data. Successfully authenticated calls will always return a nil error and a context with the auth data.
 func (e *oidcExtension) authenticate(ctx context.Context, headers map[string][]string) (context.Context, error) {
+	fmt.Println("***Headers: %s", headers)
 	authHeaders := headers[e.cfg.Attribute]
+	fmt.Println("***AuthHeaders: %s", authHeaders)
 	if len(authHeaders) == 0 {
 		return ctx, errNotAuthenticated
 	}
@@ -101,11 +104,18 @@ func (e *oidcExtension) authenticate(ctx context.Context, headers map[string][]s
 		return ctx, errInvalidAuthenticationHeaderFormat
 	}
 
+	fmt.Println("***part 1: %s", parts[1])
+
 	raw := parts[1]
 	idToken, err := e.verifier.Verify(ctx, raw)
+
+	fmt.Println("***err: %s", err)
+
 	if err != nil {
 		return ctx, fmt.Errorf("failed to verify token: %w", err)
 	}
+
+	// var err error
 
 	claims := map[string]interface{}{}
 	if err = idToken.Claims(&claims); err != nil {
@@ -194,6 +204,7 @@ func getProviderForConfig(config *Config) (*oidc.Provider, error) {
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
+	fmt.Println("***before getting issuer...")
 	cert, err := getIssuerCACertFromPath(config.IssuerCAPath)
 	if err != nil {
 		return nil, err // the errors from this path have enough context already
@@ -206,12 +217,28 @@ func getProviderForConfig(config *Config) (*oidc.Provider, error) {
 		t.TLSClientConfig.RootCAs.AddCert(cert)
 	}
 
+	fmt.Println("***before http.client...")
+
 	client := &http.Client{
 		Timeout:   5 * time.Second,
 		Transport: t,
 	}
+	
 	oidcContext := oidc.ClientContext(context.Background(), client)
-	return oidc.NewProvider(oidcContext, config.IssuerURL)
+
+	// oidcContext := oidc.InsecureIssuerURLContext(oidcContext1, config.IssuerURL)
+	if config.DiscoveryBaseURL != "" {
+		oidcContextWithIssuerURL := oidc.InsecureIssuerURLContext(oidcContext, config.IssuerURL)
+		return oidc.NewProvider(oidcContextWithIssuerURL, config.DiscoveryBaseURL)
+	} else {
+		return oidc.NewProvider(oidcContext, config.IssuerURL)
+	}
+
+	// fmt.Println("***before new provider...%s", oidcContext)
+
+	// return oidc.NewProvider(oidcContext, config.IssuerURL)
+	// return oidc.NewProvider(oidcContext, "https://ida.jpmorganchase.com/adfs")
+	
 }
 
 func getIssuerCACertFromPath(path string) (*x509.Certificate, error) {
