@@ -24,9 +24,10 @@ import (
 )
 
 var (
-	errNoClientIDProvided     = errors.New("no ClientID provided in the OAuth2 exporter configuration")
-	errNoTokenURLProvided     = errors.New("no TokenURL provided in OAuth Client Credentials configuration")
-	errNoClientSecretProvided = errors.New("no ClientSecret provided in OAuth Client Credentials configuration")
+	errNoClientIDProvided                   = errors.New("no ClientID provided in the OAuth2 exporter configuration")
+	errNoTokenURLProvided                   = errors.New("no TokenURL provided in OAuth Client Credentials configuration")
+	errNoClientSecretProvided               = errors.New("no ClientSecret provided in OAuth Client Credentials configuration")
+	errNoClientSecretNorCertificateProvided = errors.New("no Password nor Certificate provided in OAuth Client Credentials configuration")
 )
 
 // Config stores the configuration for OAuth2 Client Credentials (2-legged OAuth2 flow) setup.
@@ -53,6 +54,30 @@ type Config struct {
 	// See https://datatracker.ietf.org/doc/html/rfc6749#section-3.3
 	Scopes []string `mapstructure:"scopes,omitempty"`
 
+	// Username is a separate identifier from ClientID.
+	// See https://datatracker.ietf.org/doc/html/rfc6749#section-2.2
+	Username string `mapstructure:"username"`
+
+	// Audience identifies the recipient that the JWT is intended for.
+	// See https://datatracker.ietf.org/doc/html/rfc6749#section-2.2
+	Audience string `mapstructure:"audience"`
+
+	// Resource is the application to access.
+	// See https://datatracker.ietf.org/doc/html/rfc6749#section-2.2
+	Resource string `mapstructure:"resource"`
+
+	// AwsPrivateKeySecretName is the name of the AWS secret for the private key.
+	// See https://datatracker.ietf.org/doc/html/rfc6749#section-2.2
+	AwsPrivateKeySecretName string `mapstructure:"aws_private_key_secret_name"`
+
+	// AwsCertificateSecretName is the name of the AWS secret for the private key.
+	// See https://datatracker.ietf.org/doc/html/rfc6749#section-2.2
+	AwsCertificateSecretName string `mapstructure:"aws_certificate_secret_name"`
+
+	// AwsRegion is the region AWS region where the secrets are stored.
+	// See https://datatracker.ietf.org/doc/html/rfc6749#section-2.2
+	AwsRegion string `mapstructure:"aws_region"`
+
 	// TLSSetting struct exposes TLS client configuration for the underneath client to authorization server.
 	TLSSetting configtls.TLSClientSetting `mapstructure:"tls,omitempty"`
 
@@ -68,9 +93,9 @@ func (cfg *Config) Validate() error {
 	if cfg.ClientID == "" {
 		return errNoClientIDProvided
 	}
-	if cfg.ClientSecret == "" {
-		return errNoClientSecretProvided
-	}
+	// if cfg.ClientSecret == "" {
+	// 	return errNoClientSecretProvided
+	// }
 	if cfg.TokenURL == "" {
 		return errNoTokenURLProvided
 	}
